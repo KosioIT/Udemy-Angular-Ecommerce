@@ -1,0 +1,15 @@
+# Angular CLI and build artefacts
+.nx/
+.angular/
+e2e/
+
+# Node modules and dependency files
+package-lock.json
+node_modules/
+
+# Key files
+*.crt
+*.key
+
+# Apache configs
+localhost.conf  

@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": "src",
+    "paths": {
+      "src/*": ["./*"]
+    },
+    "outDir": "./out-tsc/app",
+    "sourceMap": true,
+    "composite": true,
+    "declaration": false,
+    "types": ["node"],
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "files": ["src/main.ts", "src/polyfills.ts"],
+  "include": ["src/**/*.d.ts"],
+  "exclude": ["src/test.ts", "src/**/*.spec.ts"]
+}
