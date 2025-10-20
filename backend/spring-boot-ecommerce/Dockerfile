@@ -1,7 +1,7 @@
 # ===========================
 # stage 1: build with Maven (no mvnw/.mvn required)
 # ===========================
-FROM maven:3.8.7-eclipse-temurin-21 AS build
+FROM maven:3.8.8-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 
 # copy pom first for better layer caching
@@ -16,7 +16,7 @@ RUN mvn -B -DskipTests package
 # ===========================
 # stage 2: runtime
 # ===========================
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 # copy the built jar from the build stage
