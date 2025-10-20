@@ -1,18 +1,16 @@
 # ===========================
-# stage 1: build with Maven
+# stage 1: build with Maven (no mvnw/.mvn required)
 # ===========================
 FROM maven:3.8.7-eclipse-temurin-17 AS build
 WORKDIR /app
 
-# копирай pom и .mvn за кеширане на зависимости
-COPY pom.xml mvnw ./
-COPY .mvn .mvn
-RUN mvn -B -q dependency:go-offline
+# copy pom first for better layer caching
+COPY pom.xml .
 
-# копирай изходния код
-COPY src src
+# copy source
+COPY src ./src
 
-# билдни проекта (без тестове)
+# build the project (skip tests for faster builds)
 RUN mvn -B -DskipTests package
 
 # ===========================
@@ -21,19 +19,25 @@ RUN mvn -B -DskipTests package
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 
-# копирай готовия jar
+# copy the built jar from the build stage
 COPY --from=build /app/target/*.jar app.jar
 
-# задаване на порт (Spring Boot по подразбиране 8080)
+# expose port
 EXPOSE 8080
 
-# ENTRYPOINT с декодиране на base64 keystore
+# decode base64 keystore and start the app
 ENTRYPOINT ["/bin/sh", "-c", "\
-  echo $SSL_KEY_STORE_B64 | base64 -d > /tmp/luv2code-keystore.p12 && \
-  java -Dserver.ssl.key-store=/tmp/luv2code-keystore.p12 \
-       -Dserver.ssl.key-store-password=$SSL_KEY_STORE_PASSWORD \
-       -Dserver.ssl.key-password=$SSL_KEY_PASSWORD \
-       -Dserver.ssl.key-store-type=$SSL_KEY_STORE_TYPE \
-       -Dserver.ssl.key-alias=$SSL_ALIAS \
-       -jar /app/app.jar \
+  if [ -n \"$SSL_KEY_STORE_B64\" ]; then \
+    echo \"$SSL_KEY_STORE_B64\" | base64 -d > /tmp/luv2code-keystore.p12; \
+    KEYSTORE_PATH=/tmp/luv2code-keystore.p12; \
+  else \
+    KEYSTORE_PATH=${SSL_KEY_STORE:-}; \
+  fi && \
+  java \
+    ${KEYSTORE_PATH:+-Dserver.ssl.key-store=$KEYSTORE_PATH} \
+    ${SSL_KEY_STORE_PASSWORD:+-Dserver.ssl.key-store-password=$SSL_KEY_STORE_PASSWORD} \
+    ${SSL_KEY_PASSWORD:+-Dserver.ssl.key-password=$SSL_KEY_PASSWORD} \
+    ${SSL_KEY_STORE_TYPE:+-Dserver.ssl.key-store-type=$SSL_KEY_STORE_TYPE} \
+    ${SSL_ALIAS:+-Dserver.ssl.key-alias=$SSL_ALIAS} \
+    -jar /app/app.jar \
 "]
