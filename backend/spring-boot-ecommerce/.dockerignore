@@ -1,4 +1,8 @@
 target
 .git
-.idea
+.gitignore
 *.log
+*.jks
+*.p12
+.vscode
+.idea
